@@ -2,6 +2,9 @@ import logging
 import pickle
 
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
@@ -23,7 +26,7 @@ class KClustering:
                  threshold=0.5):
 
         if base_estimator is None:
-            self.base_estimator = LinearSVC()
+            self.base_estimator = LogisticRegression()
         else:
             # self.base_estimator = clone(base_estimator)
             self.base_estimator = base_estimator
@@ -36,7 +39,7 @@ class KClustering:
         self.n_clusters = None
         self.classifiers = dict()
 
-    def fit(self, X, y):
+    def fit(self, X, y, plot=False):
         """Compute k-clustering.
 
         Parameters
@@ -95,6 +98,28 @@ class KClustering:
             clf.fit(X_to_predict, y_to_predict)
             self.classifiers[i] = clf
 
+            if plot and type(clf) != LogisticRegression:
+                logging.error('Plotting option only available for Logistic Regression.')
+
+            elif plot and type(clf) == LogisticRegression:
+                if i == 1:
+                    sns.kdeplot(X_c.T[0], X_c.T[1], cmap="Reds", shade=True, shade_lowest=False)
+                    sns.kdeplot(X_small.T[0], X_small.T[1], cmap="Blues", shade=True, shade_lowest=False)
+                else:
+                    sns.kdeplot(X_c.T[0], X_c.T[1], cmap="Reds", shade=True, shade_lowest=False)
+
+                m = - clf.coef_[0][0] / clf.coef_[0][1]
+                n = - clf.intercept_[0] / clf.coef_[0][1]
+
+                x1 = np.max((np.min(X_c.T[0]), np.min(X_small.T[0])))
+                x2 = np.min((np.max(X_c.T[0]), np.max(X_small.T[0])))
+                y1 = m * x1 + n
+                y2 = m * x2 + n
+                plt.plot([x1, x2], [y1, y2], 'k', linewidth=1)
+
+        plt.scatter(X.T[0], X.T[1], c=y, cmap="RdBu", edgecolor="white", vmin=-0.1, vmax=1.1)
+        plt.show()
+
     def predict(self, X):
         """Prediction
 
@@ -150,29 +175,32 @@ class KClustering:
         return 'KClustering(base_estimator={0}, \nclustering_prop={1}, threshold={2}):'.format(
             self.base_estimator, self.clustering_prop, self.threshold)
 
-if __name__ == "__main__":
-    X = np.array([
-        [1,     3.25],
-        [1.5,   3],
-        [2,     3.25],
-        [3,     2],
-        [3.25,  1.5],
-        [3,     1],
-        [1,     1],
-        [1.25,  1.5],
-        [2,     2]
-    ])
-    y = np.array([0,0,0,0,0,0,1,1,1])
+
+def test():
+    m1, m2, m3, mt = ([-4, 2], [0, 5], [4, 2], [0, 0])
+    C = np.array([[1, 0], [0, 1]])
+
+    n_samples = 1000
+
+    X1 = np.random.multivariate_normal(m1, C, n_samples)
+    X2 = np.random.multivariate_normal(m2, C, n_samples)
+    X3 = np.random.multivariate_normal(m3, C, n_samples)
+    Xt = np.random.multivariate_normal(mt, C, n_samples)
+
+    X = np.vstack((X1, X2, X3, Xt))
+    y = np.concatenate((np.zeros(3 * n_samples), np.ones(n_samples)))
+
     kc = KClustering()
-    if False:
-        kc.fit(X, y)
-        kc.save_model('save_test.pkl')
-    else:
-        kc.load_model('save_test.pkl')
+
+    kc.fit(X, y, plot=True)
 
     f = kc.predict(X)
-    print('## FINAL Prediction ##')
+    print('## Prediction Results ##')
     utils.print_results(f, y)
+
+if __name__ == "__main__":
+    test()
+
 
 
 
