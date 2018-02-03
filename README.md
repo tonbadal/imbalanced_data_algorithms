@@ -1,6 +1,6 @@
 # Some Algorithms for Imbalanced Data
 
-Here you can find some algorithms to handle the problem of imbalanced data. It is has been assumed for some situations that the target class is the small class.
+Here you can find some algorithms to handle the problem of imbalanced data. It is has been assumed for some situations that the target class is the small class, as usually happens in imbalance data situations.
 
 ## K-Clustering
 
